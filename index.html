@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zulagen-Rechner für Azubis im Rettungsdienst (TVöD)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #333;
+        }
+        .card {
+            background-color: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .btn {
+            background-color: #A0522D;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #8B4513;
+        }
+        h1, h2, h3 {
+            color: #8B4513;
+        }
+        /* Custom styles for results */
+        .result-highlight {
+            border: 1px solid #10B981; 
+            background-color: #ECFDF5; 
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .result-highlight-text {
+            color: #047857;
+        }
+        .total-highlight {
+            background-color: #D1FAE5;
+            border-left: 4px solid #059669; 
+            border-radius: 0 0.5rem 0.5rem 0;
+            padding: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <main class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold mb-2">Analyse der Zulagen für Auszubildende im Rettungsdienst</h1>
+            <p class="text-lg text-gray-600">Berechnung basierend auf dem TVöD (VKA) zur Ermittlung von Ansprüchen</p>
+        </header>
+
+        <section id="legal-basis" class="card">
+            <h2 class="text-2xl font-bold mb-4">Rechtliche Grundlagen & Paragraphen (TVöD VKA)</h2>
+            <div class="space-y-4">
+                
+                <!-- Tarifliche Basis -->
+                <blockquote class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded-r-lg">
+                    <p class="font-bold text-indigo-700">Tarifliche Basis: TVAöD-V (VKA) i.V.m. § 8 TVöD (VKA)</p>
+                    <p class="text-sm mt-2 text-gray-700">
+                        Das Arbeitsverhältnis unterliegt den Bestimmungen des <strong>TVAöD-V</strong> (Verwaltungsbereich, VKA-Fassung). Die Regelungen zu den Zeitzuschlägen und Schichtzulagen folgen dabei <strong>entsprechend</strong> den Vorgaben des <strong>§ 8 TVöD (VKA)</strong>. Alle untenstehenden Sätze und Regeln sind auf dieser Grundlage korrekt.
+                    </p>
+                </blockquote>
+                
+                <h3 class="text-lg font-semibold mt-4">A. Zeitzuschläge (Prozentual zum Stundenlohn gemäß &sect; 8 Abs. 1 TVöD)</h3>
+                <ul class="list-disc list-inside space-y-2 mt-2 ml-4 text-gray-700">
+                    <li><strong>Überstunden:</strong> <strong>30%</strong> Zuschlag. (Keine zeitliche Begrenzung).</li>
+                    <li><strong>Nachtarbeit:</strong> <strong>20%</strong> des Stundenlohns (Zeitraum: <strong>21:00 bis 06:00 Uhr</strong>).</li>
+                    <li><strong>Samstagsarbeit:</strong> <strong>20%</strong> des Stundenlohns (Zeitraum: <strong>13:00 bis 21:00 Uhr</strong>).</li>
+                    <li><strong>Sonntagsarbeit:</strong> <strong>25%</strong> des Stundenlohns (Zeitraum: <strong>ganztägig (00:00 bis 24:00 Uhr)</strong>).</li>
+                    <li><strong>Heiligabend/Silvester:</strong> <strong>35%</strong> des Stundenlohns (Zeitraum: <strong>ab 06:00 Uhr</strong>).</li>
+                    <li><strong>Feiertagsarbeit:</strong> (ohne Freizeitausgleich) <strong>135%</strong> des Stundenlohns (Zeitraum: <strong>ganztägig (00:00 bis 24:00 Uhr)</strong>).</li>
+                </ul>
+
+                <h3 class="text-lg font-semibold mt-6">B. Kumulierung von Zeitzuschlägen (&sect; 8 Abs. 2 TVöD)</h3>
+                <blockquote class="mt-2 p-3 rounded-r-lg border border-gray-200 bg-gray-50">
+                    <strong class="font-bold text-red-700">Pro Stunde wird nur der höchste Zuschlag gezahlt.</strong>
+                    <p class="mt-1 text-sm text-gray-700">Werden für eine Stunde mehrere Zeitzuschläge fällig (z.B. Nacht- und Sonntagszuschlag), wird pro Stunde nur der <strong>höchste</strong> zustehende Prozentsatz vergütet (z.B. Sonntag 25% > Nacht 20%). Sie addieren sich <strong>nicht</strong>.</p>
+                </blockquote>
+
+                <h3 class="text-lg font-semibold mt-6">C. Feste Schicht- und Wechselschichtzulage (Fixbeträge pro Stunde)</h3>
+                <blockquote class="mt-2 p-3 rounded-r-lg border border-gray-200 bg-gray-50">
+                    <p class="font-mono text-sm font-bold">
+                        - Wechselschichtzulage (&sect; 8 Abs. 5): <strong>1,28 € pro Stunde</strong><br>
+                        - Schichtzulage (&sect; 8 Abs. 6): <strong>0,64 € pro Stunde</strong>
+                    </p>
+                    
+                    <p class="text-sm text-gray-700 mt-4">
+                        <strong>Hinweis für Auszubildende (Nicht-Ständig):</strong> Aufgrund des Wechsels zwischen Rettungswache (Schichtdienst), Berufsschule und Klinikpraktika erfüllen Auszubildende in der Regel nicht die Kriterien für die <strong>monatliche Pauschale</strong> der Wechselschichtzulage, da die Tätigkeit <strong>nicht ständig</strong> ist. Es werden daher meist nur die <strong>Stundensätze</strong> für die tatsächlich geleisteten Schichtstunden gezahlt.
+                    </p>
+
+                    <!-- KRITERIEN FÜR STÜNDLICHE ZULAGEN (KLARSTELLUNG) -->
+                    <h4 class="text-sm font-bold text-gray-800 mt-3">Anspruchskriterien für die stündliche Zulage (Nicht-Ständig):</h4>
+                    <ul class="list-disc list-inside text-sm text-gray-700 mt-1 ml-4 space-y-1">
+                        <li><strong>Wechselschichtzulage (1,28 €/h):</strong> Steht zu, wenn die Arbeit nach einem <strong>Wechselschichtplan</strong> erfolgt (regelmäßiger Wechsel von <strong>Tag</strong> und <strong>Nacht</strong> in ununterbrochenem 24/7-Betrieb). Die Zulage wird für jede Stunde in dieser Dienstplanform gezahlt. <strong>Achtung:</strong> Der Nachtdienst muss nur Teil des zugrunde liegenden Plans sein. <strong>Keine Mindeststunden pro Monat erforderlich.</strong></li>
+                        <li><strong>Schichtzulage (0,64 €/h):</strong> Steht nur dann zu, wenn die Wechselschichtzulage <strong>nicht</strong> zusteht, aber die Arbeit als <strong>Schichtarbeit</strong> definiert ist. Dies ist der Fall, wenn <strong>in Schichten gearbeitet wird</strong>, aber die Kriterien der Wechselschicht (der Nachtdienst-Anteil) <strong>fehlen</strong>. <strong>Keine Mindeststunden pro Monat erforderlich.</strong></li>
+                    </ul>
+                    <!-- ENDE KRITERIEN -->
+                    
+                    <p class="mt-3 text-sm font-medium border-t pt-3 border-gray-300">
+                        <strong>Addition und Unabhängigkeit (§ 8 Abs. 1 vs. Abs. 5/6):</strong> Die festen Schichtzulagen werden <strong>immer zusätzlich</strong> zu den prozentualen Zeitzuschlägen gezahlt. Die Zahlung der Schichtzulage hebt insbesondere die Ansprüche auf Samstags- oder Sonntagszuschläge <strong>nicht auf</strong>.
+                        <br>
+                        <strong class="font-bold text-red-700">Ausschlussprinzip:</strong> Nur die <strong>höhere</strong> Stundenzulage (Wechselschicht oder Schicht) darf pro Dienst geltend gemacht werden.
+                    </p>
+                </blockquote>
+                
+                <h3 class="text-lg font-semibold mt-6">D. Entgeltfortzahlung (Krankheit & Urlaub) – &sect; 21 TVöD</h3>
+                <blockquote class="mt-2 p-3 rounded-r-lg border border-gray-200 bg-gray-50">
+                    <p class="text-sm text-gray-700">
+                        Die Zulagen (&sect; 8 Abs. 1, 5, 6 TVöD) werden nicht nur im <strong>Krankheitsfall (&sect; 22)</strong>, sondern auch bei der Berechnung des <strong>Urlaubsentgelts (&sect; 26)</strong> in Höhe des <strong>Durchschnitts der letzten drei vollen Kalendermonate</strong> fortgezahlt.
+                    </p>
+                    <p class="text-sm text-gray-700 mt-2">
+                        Das bedeutet: Während Ihres Urlaubs oder bei Krankheit erhalten Sie zusätzlich zum Grundgehalt die durchschnittlich gezahlten Zeitzuschläge und Schichtzulagen, die Sie in den drei Monaten vor dem Ereignis erhalten haben. Der berechnete <strong>Monatsdurchschnitt</strong> unten dient als Schätzung für diesen Betrag.
+                    </p>
+                </blockquote>
+            </div>
+        </section>
+
+        <section id="calculator" class="card">
+            <h2 class="text-2xl font-bold mb-6 text-center">Interaktiver Zulagen-Rechner</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div>
+                    <h3 class="text-xl font-semibold mb-4">1. Grunddaten eingeben</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="brutto" class="block text-sm font-medium text-gray-700">Monatsgehalt (Brutto) in €</label>
+                            <input type="number" id="brutto" value="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label for="wochenstunden" class="block text-sm font-medium text-gray-700">Wochenarbeitszeit (Soll-Zeit)</label>
+                            <input type="number" id="wochenstunden" value="0" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-700">Berechneter Stundenlohn:</p>
+                            <p id="stundenlohn" class="text-lg font-bold text-indigo-600">0,00 €</p>
+                        </div>
+                    </div>
+
+                    <h3 class="text-xl font-semibold mb-4 mt-8">2. Dienststunden-Rechner (Optional)</h3>
+                    <div class="p-3 bg-indigo-50 border-l-4 border-indigo-500 text-indigo-800 text-sm rounded-r-lg mb-6">
+                        Tragen Sie Ihre Dienstzahl und die <strong>zulagenberechtigten Stunden pro Dienst</strong> ein, um die <strong>Gesamtstunden</strong> für die Zeitzuschläge zu erhalten.
+                    </div>
+                    <div class="grid grid-cols-3 gap-4">
+                         <div>
+                            <label for="dienst_anzahl" class="block text-sm font-medium text-gray-700">Anzahl der Dienste</label>
+                            <input type="number" id="dienst_anzahl" value="0" class="calc-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                         <div>
+                            <label for="stunden_pro_dienst" class="block text-sm font-medium text-gray-700">Stunden pro Dienst</label>
+                            <input type="number" id="stunden_pro_dienst" value="0" class="calc-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div class="flex flex-col justify-end">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Gesamt-Dienststunden:</label>
+                            <p id="gesamt_dienststunden" class="text-lg font-bold text-indigo-600">0 Stunden</p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="xl font-semibold mb-4 mt-8 border-t pt-4 border-gray-200">3. Berechnung der Zulagen und Beträge</h3>
+                    <div class="p-3 bg-blue-50 border-l-4 border-blue-500 text-blue-800 text-sm rounded-r-lg mb-6">
+                        <strong>Wichtig: Splitten Sie Dienste!</strong> Tragen Sie hier <strong>Gesamtstunden</strong> ein, die <strong>tatsächlich</strong> den jeweiligen höchsten Zuschlag erhalten haben (Kumulierungsregel beachten).
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <!-- Feiertagszulage (135%): Höchste Priorität -->
+                            <label for="feiertage_stunden" class="block text-sm font-medium text-gray-700">
+                                Feiertage (135%, 00-24 Uhr) – <strong>Gesamtstunden</strong>:
+                            </label>
+                            <input type="number" id="feiertage_stunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <!-- Sonntagszulage (25%): Mittlere Priorität -->
+                            <label for="sonntage_stunden" class="block text-sm font-medium text-gray-700">
+                                Sonntage (25%, 00-24 Uhr) – <strong>Gesamtstunden</strong>:
+                            </label>
+                            <input type="number" id="sonntage_stunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                             <!-- Vorfeiertagszulage (35%): Hohe Priorität am 24./31.12. -->
+                            <label for="vorfeiertag_stunden" class="block text-sm font-medium text-gray-700">
+                                Vorfeiertage (35% ab 06:00 Uhr) – <strong>Gesamtstunden</strong>:
+                            </label>
+                            <input type="number" id="vorfeiertag_stunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <!-- Reine Nachtdienste (20%): Geringste Priorität, nur werktags zählen -->
+                            <label for="nachtdienste_stunden" class="block text-sm font-medium text-gray-700">
+                                Nachtdienste (20%, 21-06 Uhr) – <strong>Gesamtstunden</strong>:
+                            </label>
+                            <input type="number" id="nachtdienste_stunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <!-- Samstagszulage (20%): Stunden nur Samstags 13:00-21:00 Uhr -->
+                            <label for="samstage_stunden" class="block text-sm font-medium text-gray-700">
+                                Samstage (20%, 13-21 Uhr) – <strong>Gesamtstunden</strong>:
+                            </label>
+                            <input type="number" id="samstage_stunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                         <div>
+                            <label for="ueberstunden" class="block text-sm font-medium text-gray-700">Geleistete Überstunden gesamt (<strong>Stunden</strong>)</label>
+                            <input type="number" id="ueberstunden" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+
+                    <h4 class="text-lg font-bold mt-8 mb-4 border-t pt-4 border-gray-200">Feste Schichtzulagen</h4>
+                    <p class="text-sm text-gray-600 mb-4">Hier tragen Sie die <strong>Anzahl der Dienste</strong> ein. Für die Berechnung der Zulage wird eine Dauer von <strong>12 Stunden pro Dienst</strong> angenommen.</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="schicht" class="block text-sm font-medium text-gray-700">
+                                Schichtdienste (<strong>0,64 €/h</strong>) – <strong>Anzahl Dienste</strong>:
+                            </label>
+                            <input type="number" id="schicht" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label for="wechselschicht" class="block text-sm font-medium text-gray-700">
+                                Wechselschichtdienste (<strong>1,28 €/h</strong>) – <strong>Anzahl Dienste</strong>:
+                            </label>
+                            <input type="number" id="wechselschicht" value="0" class="data-input mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="xl font-semibold mb-4">4. Analyse der Nachzahlung und Durchschnitte</h3>
+                    
+                    <div id="results-zeitzuschlaege" class="space-y-2 p-4 result-highlight mb-4">
+                        <h4 class="font-bold text-lg result-highlight-text">Zeitzuschläge und Überstunden (Prozentualer Satz)</h4>
+                        <!-- Ergebnisse werden nach Berechnung hier eingefügt -->
+                    </div>
+
+                    <div id="results-new-rates" class="result-highlight">
+                        <h4 class="font-bold text-lg result-highlight-text mb-2">Feste Schichtzulagen</h4>
+                        <div id="new-rates-details"></div>
+                        <div class="mt-2 pt-2 border-t border-green-300">
+                            <span class="text-sm">Schichtzulage Gesamt:</span> 
+                            <strong id="total-shift" class="text-base font-bold result-highlight-text">0,00 €</strong>
+                        </div>
+                    </div>
+                    
+                    <!-- Jährliche Gesamtforderung -->
+                    <div class="mt-4 p-4 total-highlight">
+                        <p class="text-lg font-semibold text-red-800">Gesamtforderung (Alle Komponenten):</p>
+                        <p id="total" class="text-3xl font-bold text-red-900">0,00 €</p>
+                    </div>
+
+                    <!-- 5. Monatlicher Durchschnitt -->
+                    <div id="average-allowance-section" class="p-4 bg-orange-100 border-l-4 border-orange-500 rounded-r-lg mt-4">
+                        <h4 class="font-bold text-lg text-orange-800">5. Monatlicher Durchschnitt (&sect; 21 TVöD)</h4>
+                        <p class="text-sm text-orange-800 mb-2">Geschätzter monatlicher Durchschnitt der Zulagen (3-Monats-Schnitt) für Entgeltfortzahlung bei Krankheit oder Urlaub:</p>
+                        <strong id="monthly-average-allowance" class="text-2xl font-bold text-orange-900">0,00 €</strong>
+                    </div>
+
+                    <div class="mt-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 text-sm rounded-r-lg">
+                        Hinweis zur Gesamtsumme: Die Gesamtforderung summiert alle Zeitzuschläge (<strong>Stunden-basiert</strong>), die Überstundenvergütung und die festen Schichtzulagen (<strong>Dienst-basiert</strong>). Für die Berechnung der prozentualen Zuschläge müssen <strong>Monatsgehalt</strong> und <strong>Wochenarbeitszeit</strong> eingetragen sein.
+                    </div>
+                </div>
+            </div>
+             <div class="mt-8">
+                <h3 class="text-xl font-semibold mb-4 text-center">Visuelle Aufschlüsselung der Nachzahlung</h3>
+                <div class="chart-container">
+                    <canvas id="zulagenChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <footer class="text-center mt-10 text-sm text-gray-500">
+            <p>Dieses Tool dient der Veranschaulichung und stellt keine rechtsverbindliche Beratung dar. Alle Berechnungen sind Schätzungen basierend auf den eingegebenen Daten und der Interpretation des TVöD. Irrtümer vorbehalten.</p>
+        </footer>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inputs = document.querySelectorAll('#brutto, #wochenstunden, .data-input');
+            const calcInputs = document.querySelectorAll('.calc-input');
+            const stundenlohnEl = document.getElementById('stundenlohn');
+            const gesamtDienststundenEl = document.getElementById('gesamt_dienststunden');
+            const resultsZeitzuschlaegeEl = document.getElementById('results-zeitzuschlaege');
+            const newRatesDetailsEl = document.getElementById('new-rates-details');
+            const totalEl = document.getElementById('total');
+            const totalShiftEl = document.getElementById('total-shift');
+            
+            // KORRIGIERT: ID-Fehler behoben (von 'monthly_average_allowance' zu 'monthly-average-allowance')
+            const monthlyAverageAllowanceEl = document.getElementById('monthly-average-allowance');
+
+            // Setzt alle Ausgabefelder auf 0,00 € beim Laden (Initialzustand)
+            stundenlohnEl.textContent = '0,00 €';
+            gesamtDienststundenEl.textContent = '0 Stunden';
+            totalShiftEl.textContent = '0,00 €';
+            monthlyAverageAllowanceEl.textContent = '0,00 €'; 
+            totalEl.textContent = '0,00 €';
+            
+            // Initialer Inhalt der Ergebnisbereiche (Titel für Zeitzuschläge wird hier nur beim Laden gesetzt)
+             resultsZeitzuschlaegeEl.innerHTML = `
+                <h4 class="font-bold text-lg result-highlight-text">Zeitzuschläge und Überstunden (Prozentualer Satz)</h4>
+            `;
+            newRatesDetailsEl.innerHTML = '';
+            
+            let chartInstance = null;
+            const ctx = document.getElementById('zulagenChart').getContext('2d');
+            
+            // Funktion zur Diagrammerstellung/-aktualisierung
+            function createOrUpdateChart(labels, data) {
+                if (chartInstance) {
+                    chartInstance.data.labels = labels;
+                    chartInstance.data.datasets[0].data = data;
+                    chartInstance.update();
+                } else {
+                    chartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Nachzahlung in €',
+                                data: data,
+                                backgroundColor: [
+                                    'rgba(255, 99, 132, 0.5)', 
+                                    'rgba(54, 162, 235, 0.5)',
+                                    'rgba(255, 206, 86, 0.5)', 
+                                    'rgba(75, 192, 192, 0.5)',
+                                    'rgba(153, 102, 255, 0.5)',
+                                    'rgba(255, 159, 64, 0.5)', 
+                                    'rgba(99, 255, 132, 0.5)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(153, 102, 255, 1)',
+                                    'rgba(255, 159, 64, 1)',
+                                    'rgba(99, 255, 132, 1)'
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + ' €';
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                     callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (context.parsed.y !== null) {
+                                                label += new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(context.parsed.y);
+                                            }
+                                            return label;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Funktion: Berechnung der Gesamt-Dienststunden (Punkt 2)
+            function calculateServiceHours() {
+                const anzahl = parseFloat(document.getElementById('dienst_anzahl').value) || 0;
+                const stunden = parseFloat(document.getElementById('stunden_pro_dienst').value) || 0;
+                const totalHours = anzahl * stunden;
+                
+                gesamtDienststundenEl.textContent = totalHours.toFixed(0) + ' Stunden';
+                calculate(); // Gesamtkalkulation neu starten
+            }
+            
+            function calculate() {
+                const brutto = parseFloat(document.getElementById('brutto').value) || 0;
+                const wochenstunden = parseFloat(document.getElementById('wochenstunden').value) || 0;
+                const wochenImMonat = 52 / 12;
+
+                // Stundenlohn Berechnung
+                const monatsstunden = wochenstunden * wochenImMonat;
+                const stundenlohn = monatsstunden > 0 ? brutto / monatsstunden : 0;
+                
+                stundenlohnEl.textContent = stundenlohn.toFixed(2).replace('.', ',') + ' €';
+
+                // 3. Zulagen-Input (Stunden-basiert)
+                const samstageStunden = parseFloat(document.getElementById('samstage_stunden').value) || 0;
+                const sonntageStunden = parseFloat(document.getElementById('sonntage_stunden').value) || 0;
+                const feiertageStunden = parseFloat(document.getElementById('feiertage_stunden').value) || 0;
+                const vorfeiertagStunden = parseFloat(document.getElementById('vorfeiertag_stunden').value) || 0;
+                const nachtdiensteStunden = parseFloat(document.getElementById('nachtdienste_stunden').value) || 0;
+                const ueberstunden = parseFloat(document.getElementById('ueberstunden').value) || 0;
+                
+                // Feste Zulagen (Dienst-basiert)
+                const schichtDienste = parseInt(document.getElementById('schicht').value) || 0;
+                const wechselschichtDienste = parseInt(document.getElementById('wechselschicht').value) || 0;
+                
+                // NEU: Feste 12 Stunden pro Dienst für die Schichtzulage (unabhängig von Punkt 2)
+                const FIXED_SHIFT_HOURS = 12;
+
+                // --- 1. Zeitzuschläge (Prozentual) Berechnung ---
+                const feiertagsZulage = feiertageStunden * (stundenlohn * 1.35); 
+                const sonntagsZulage = sonntageStunden * (stundenlohn * 0.25); 
+                const vorfeiertagsZulage = vorfeiertagStunden * (stundenlohn * 0.35); 
+                const samstagsZulage = samstageStunden * (stundenlohn * 0.20); 
+                const nachtsZulage = nachtdiensteStunden * (stundenlohn * 0.20); 
+                
+                const zeitzuschlaegeTotal = samstagsZulage + sonntagsZulage + feiertagsZulage + vorfeiertagsZulage + nachtsZulage;
+
+                // --- 2. Überstundenvergütung ---
+                const ueberstundenSatz = 1.30; 
+                const ueberstundenTotal = ueberstunden * stundenlohn * ueberstundenSatz;
+
+                // --- 3. Feste Schicht- und Wechselschichtzulagen (Fixbeträge) ---
+                const schichtZulageBetrag = 0.64;
+                const wechselschichtZulageBetrag = 1.28;
+
+                // Berechnung der tatsächlichen Stunden für die Zulage, jetzt basierend auf 12 Stunden/Dienst
+                const schichtStunden = schichtDienste * FIXED_SHIFT_HOURS;
+                const wechselschichtStunden = wechselschichtDienste * FIXED_SHIFT_HOURS;
+
+                const schichtZulage = schichtStunden * schichtZulageBetrag;
+                const wechselschichtZulage = wechselschichtStunden * wechselschichtZulageBetrag;
+
+                const schichtZulageTotal = schichtZulage + wechselschichtZulage;
+                
+                // --- Gesamtsummen ---
+                const totalYearlyAllowances = zeitzuschlaegeTotal + schichtZulageTotal;
+                const totalMax = totalYearlyAllowances + ueberstundenTotal; 
+
+                // --- 5. Monatlicher Durchschnitt (§ 21 TVöD) ---
+                const monthlyAverageAllowance = totalYearlyAllowances / 12;
+                
+                // --- HTML Ausgabe (Punkt 4 & 5) ---
+
+                // Zeitzuschläge und Überstunden (Prozentualer Satz)
+                resultsZeitzuschlaegeEl.innerHTML = `
+                    <h4 class="font-bold text-lg result-highlight-text">Zeitzuschläge und Überstunden (Prozentualer Satz)</h4>
+                    
+                    <!-- Feiertagszulage: Stil auf neutral (text-gray-700) geändert -->
+                    ${generateResultLineAlwaysVisible('Feiertagszulage (135%)', feiertagsZulage, 'text-gray-700', feiertageStunden)} 
+
+                    ${generateResultLineAlwaysVisible('Sonntagszulage (25%)', sonntagsZulage, 'text-gray-700', sonntageStunden)}
+                    ${generateResultLineAlwaysVisible('Vorfeiertagszulage (35%)', vorfeiertagsZulage, 'text-gray-700', vorfeiertagStunden)}
+                    ${generateResultLineAlwaysVisible('Nachtarbeitszulage (20%)', nachtsZulage, 'text-gray-700', nachtdiensteStunden)}
+                    ${generateResultLineAlwaysVisible('Samstagszulage (20%)', samstagsZulage, 'text-gray-700', samstageStunden)}
+                    <div class="mt-2 pt-2 border-t border-gray-300">
+                        <!-- Überstunden: Stil auf neutral (text-gray-700) geändert -->
+                        ${generateResultLineAlwaysVisible('Überstunden (Grundlohn + 30% Zulage)', ueberstundenTotal, 'text-gray-700', ueberstunden)}
+                    </div>
+                `;
+
+                // Feste Schichtzulagen
+                newRatesDetailsEl.innerHTML = `
+                    ${generateResultLineAlwaysVisible('Wechselschichtzulage (1,28 €/h)', wechselschichtZulage, 'result-highlight-text font-bold', wechselschichtDienste, ' Dienste', wechselschichtStunden)}
+                    ${generateResultLineAlwaysVisible('Schichtzulage (0,64 €/h)', schichtZulage, 'text-gray-600', schichtDienste, ' Dienste', schichtStunden)}
+                `;
+                totalShiftEl.textContent = schichtZulageTotal.toFixed(2).replace('.', ',') + ' €';
+
+                // 5. Monatlicher Durchschnitt
+                monthlyAverageAllowanceEl.textContent = monthlyAverageAllowance.toFixed(2).replace('.', ',') + ' €';
+
+                // Gesamt
+                totalEl.textContent = totalMax.toFixed(2).replace('.', ',') + ' €';
+
+                // Chart Daten
+                const chartLabels = ['Feiertag (135%)', 'Sonntag (25%)', 'Vorfeiertag (35%)', 'Nacht (20%)', 'Samstag (20%)', 'Feste Schichtzulagen (€/h)', 'Überstunden (130%)'];
+                const chartData = [feiertagsZulage, sonntagsZulage, vorfeiertagsZulage, nachtsZulage, samstagsZulage, schichtZulageTotal, ueberstundenTotal];
+                
+                if (totalMax === 0) {
+                     createOrUpdateChart([], []);
+                } else {
+                     createOrUpdateChart(chartLabels, chartData);
+                }
+            }
+            
+            // Hilfsfunktion: Zeigt das Ergebnis immer an (auch wenn Wert 0,00 € ist), blendet nur bei negativen Werten aus.
+            function generateResultLineAlwaysVisible(label, value, extraClass = '', inputCount = null, unit = ' Std.', totalHours = null) {
+                // Nur bei negativen Werten ausblenden. 0,00 € wird angezeigt.
+                if (value < 0) { 
+                    return '';
+                }
+                
+                const formattedValue = value.toFixed(2).replace('.', ',');
+                
+                let countText = '';
+                if (inputCount !== null && inputCount > 0) {
+                    if (unit === ' Std.') {
+                         // Zeitzuschläge und Überstunden (mit Dezimalstellen, falls eingegeben)
+                         countText = ` (${inputCount}${unit})`;
+                    } else if (unit === ' Dienste' && totalHours !== null) {
+                         // Feste Schichtzulagen (Anzahl Dienste wird als ganze Zahl angezeigt, Stunden als Approximation)
+                         countText = ` (${inputCount.toFixed(0)}${unit} ≈ ${totalHours.toFixed(0)} Std.)`;
+                    }
+                }
+                
+                return `
+                    <div class="flex justify-between items-center text-sm ${extraClass}">
+                        <span class="text-gray-600">${label}:</span>
+                        <span class="font-semibold">${formattedValue} €${countText}</span>
+                    </div>
+                `;
+            }
+
+            // Initialisierung und Event Listener
+            inputs.forEach(input => input.addEventListener('input', calculate));
+            calcInputs.forEach(input => input.addEventListener('input', calculateServiceHours));
+            
+            // Initialberechnung beim Laden (sollte 0,00 € ergeben)
+            calculateServiceHours(); 
+        });
+    </script>
+</body>
+</html>
